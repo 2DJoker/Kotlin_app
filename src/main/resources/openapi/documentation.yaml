@@ -1,0 +1,156 @@
+openapi: 3.0.3
+info:
+  title: Ktor Shop API
+  version: 1.0.0
+  description: API for users and administrators.
+servers:
+  - url: http://localhost:8080
+paths:
+  /auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              password: secret123
+              fullName: John Doe
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /products:
+    get:
+      summary: List products
+      responses:
+        '200':
+          description: Products
+  /products/{id}:
+    get:
+      summary: Get product by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Product details
+  /orders:
+    post:
+      summary: Create order
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Order created
+    get:
+      summary: User orders
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orders list
+  /orders/{id}:
+    delete:
+      summary: Cancel order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Canceled
+  /admin/products:
+    post:
+      summary: Add product (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Product created
+  /admin/products/{id}:
+    put:
+      summary: Update product (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Product updated
+    delete:
+      summary: Delete product (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Product deleted
+  /admin/stats/orders:
+    get:
+      summary: Orders statistics (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Statistics
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+      required: [email, password, fullName]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        role:
+          type: string

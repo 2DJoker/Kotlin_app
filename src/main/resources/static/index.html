@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ktor Shop UI</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --bg-soft: #0d0d0d;
+      --panel: rgba(8, 8, 8, 0.86);
+      --line: rgba(255, 255, 255, 0.22);
+      --line-strong: rgba(255, 255, 255, 0.52);
+      --text: #f5f5f5;
+      --muted: #a5a5a5;
+      --ok: #d6ffd6;
+      --err: #ffd2d2;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 15%, #141414 0%, transparent 44%),
+        radial-gradient(circle at 82% 75%, #121212 0%, transparent 40%),
+        linear-gradient(160deg, #020202, #090909 45%, #020202);
+      font-family: "Courier New", "IBM Plex Mono", monospace;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: 0;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.09;
+      background-image: radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);
+      background-size: 4px 4px;
+      mix-blend-mode: screen;
+      z-index: 0;
+    }
+
+    .sigil-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .sigil {
+      position: absolute;
+      width: min(42vw, 360px);
+      height: auto;
+      opacity: 0.24;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.18));
+      stroke: #fff;
+      fill: none;
+      stroke-width: 1.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .sigil.left {
+      left: -70px;
+      top: -40px;
+    }
+
+    .sigil.right {
+      right: -80px;
+      bottom: -90px;
+      transform: scaleX(-1);
+      animation-duration: 15s;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      animation: reveal 520ms ease;
+    }
+
+    .hero {
+      background: linear-gradient(145deg, rgba(0,0,0,0.76), rgba(18,18,18,0.78));
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.52), inset 0 0 0 1px rgba(255,255,255,0.05);
+      margin-bottom: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: clamp(20px, 4vw, 36px);
+      font-family: "Arial Narrow", "Helvetica Neue", sans-serif;
+      font-weight: 900;
+    }
+
+    .credit {
+      border: 1px solid var(--line-strong);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: #fff;
+      color: #000;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .sub a {
+      color: #fff;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(255,255,255,0.65);
+    }
+
+    .meme {
+      margin: 14px 0 0;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #020202;
+      color: #efefef;
+      padding: 12px;
+      line-height: 1.25;
+      font-size: 12px;
+      overflow-x: auto;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .status {
+      margin: 14px 0;
+      border: 1px solid var(--line);
+      border-left: 3px solid #fff;
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 10px 12px;
+      color: var(--ok);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .status.err {
+      color: var(--err);
+      border-left-color: #ffb2b2;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.42);
+      backdrop-filter: blur(1px);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-family: "Arial Narrow", sans-serif;
+    }
+
+    .card small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 4px;
+      color: #bcbcbc;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      padding: 10px;
+      background: #050505;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    input:focus {
+      border-color: rgba(255,255,255,0.72);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.12);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      margin-top: 10px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: #efefef;
+      color: #050505;
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: #050505;
+      color: #fff;
+    }
+
+    .token {
+      min-height: 56px;
+      border: 1px dashed rgba(255,255,255,0.26);
+      background: #050505;
+      border-radius: 8px;
+      padding: 8px;
+      color: #f0f0f0;
+      font-size: 11px;
+      font-family: "Courier New", monospace;
+      word-break: break-all;
+    }
+
+    .output-card {
+      margin-top: 14px;
+    }
+
+    #output {
+      margin: 0;
+      min-height: 160px;
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #030303;
+      color: #fff;
+      padding: 12px;
+      font-size: 12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0); }
+      to { transform: translateY(14px); }
+    }
+
+    @media (max-width: 700px) {
+      .wrap { padding-top: 14px; }
+      .hero { padding: 14px; }
+      .credit { font-size: 10px; }
+      .row button { flex: 1 1 100%; }
+      button { width: 100%; }
+      .sigil { opacity: 0.16; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sigil-layer" aria-hidden="true">
+    <svg class="sigil left" viewBox="0 0 260 920">
+      <path d="M175 10c36 18 48 56 26 86-20 28-64 32-82 8-19-24-2-56 28-58"/>
+      <path d="M150 96c-30 42-28 108 12 146 42 39 45 96 9 136-26 29-71 36-98 11-28-26-22-76 17-92 29-12 62 4 71 34"/>
+      <path d="M118 222c14 48-12 84-44 118-25 27-37 65-18 98 21 37 70 49 105 30"/>
+      <path d="M150 312c36 26 52 66 39 106-12 37-46 59-84 52-35-7-61-42-52-77 8-30 39-51 74-43"/>
+      <path d="M128 394c-8 44 17 77 51 101 30 22 49 58 45 96-4 41-35 73-74 76-36 3-68-20-78-54"/>
+      <path d="M176 500c-44 14-63 52-68 93-4 34-22 66-55 80"/>
+      <path d="M126 532c30 30 37 72 21 111-17 43-57 70-100 67"/>
+      <path d="M150 604c38 35 48 83 24 127-23 41-75 58-115 38"/>
+      <path d="M141 696c21 44 6 95-36 122"/>
+      <path d="M100 250c16-13 35-21 56-23"/>
+      <path d="M88 356c20-16 45-23 68-21"/>
+      <path d="M76 474c22-14 47-18 69-10"/>
+      <path d="M66 594c22-10 45-10 66 0"/>
+      <path d="M58 728c18-7 37-5 53 4"/>
+    </svg>
+
+    <svg class="sigil right" viewBox="0 0 260 920">
+      <path d="M175 10c36 18 48 56 26 86-20 28-64 32-82 8-19-24-2-56 28-58"/>
+      <path d="M150 96c-30 42-28 108 12 146 42 39 45 96 9 136-26 29-71 36-98 11-28-26-22-76 17-92 29-12 62 4 71 34"/>
+      <path d="M118 222c14 48-12 84-44 118-25 27-37 65-18 98 21 37 70 49 105 30"/>
+      <path d="M150 312c36 26 52 66 39 106-12 37-46 59-84 52-35-7-61-42-52-77 8-30 39-51 74-43"/>
+      <path d="M128 394c-8 44 17 77 51 101 30 22 49 58 45 96-4 41-35 73-74 76-36 3-68-20-78-54"/>
+      <path d="M176 500c-44 14-63 52-68 93-4 34-22 66-55 80"/>
+      <path d="M126 532c30 30 37 72 21 111-17 43-57 70-100 67"/>
+      <path d="M150 604c38 35 48 83 24 127-23 41-75 58-115 38"/>
+      <path d="M141 696c21 44 6 95-36 122"/>
+      <path d="M100 250c16-13 35-21 56-23"/>
+      <path d="M88 356c20-16 45-23 68-21"/>
+      <path d="M76 474c22-14 47-18 69-10"/>
+      <path d="M66 594c22-10 45-10 66 0"/>
+      <path d="M58 728c18-7 37-5 53 4"/>
+    </svg>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="topbar">
+        <h1>Ktor Shop // Cybersigilism</h1>
+        <div class="credit">made by proxyess</div>
+      </div>
+      <p class="sub">котлин пересдача Кузнецов<a href="/swagger" target="_blank"></a>.</p>
+      <pre class="meme">
+
+   [ AUTH ] -> [ PRODUCTS ] -> [ ORDERS ]
+      </pre>
+    </section>
+
+    <div id="status" class="status">Готово.</div>
+
+    <div class="grid">
+      <section class="card">
+        <h3>Auth</h3>
+        <small>Регистрация, логин, хранение JWT</small>
+        <label>Email</label>
+        <input id="email" value="user@test.dev" />
+        <label>Password</label>
+        <input id="password" value="secret123" type="password" />
+        <label>Full name (для register)</label>
+        <input id="fullName" value="Test User" />
+        <div class="row">
+          <button id="registerBtn">Register</button>
+          <button id="loginBtn">Login</button>
+          <button id="logoutBtn">Logout</button>
+        </div>
+        <label>JWT token</label>
+        <div id="token" class="token"></div>
+      </section>
+
+      <section class="card">
+        <h3>Products</h3>
+        <small>Публичные методы каталога</small>
+        <div class="row">
+          <button id="productsBtn">GET /products</button>
+          <button id="productByIdBtn">GET /products/{id}</button>
+        </div>
+        <label>Product ID</label>
+        <input id="productId" value="1" />
+      </section>
+
+      <section class="card">
+        <h3>Orders</h3>
+        <small>Нужен JWT из блока Auth</small>
+        <label>Product ID</label>
+        <input id="orderProductId" value="1" />
+        <label>Quantity</label>
+        <input id="orderQuantity" value="1" />
+        <div class="row">
+          <button id="createOrderBtn">POST /orders</button>
+          <button id="myOrdersBtn">GET /orders</button>
+        </div>
+        <label>Order ID (cancel)</label>
+        <input id="cancelOrderId" value="1" />
+        <button id="cancelOrderBtn">DELETE /orders/{id}</button>
+      </section>
+    </div>
+
+    <section class="card output-card">
+      <h3>Ответ API</h3>
+      <pre id="output">{}</pre>
+    </section>
+  </div>
+
+  <script>
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    const tokenBox = document.getElementById('token');
+
+    let token = localStorage.getItem('jwt') || '';
+    refreshToken();
+
+    function refreshToken() {
+      tokenBox.textContent = token || 'Нет токена';
+    }
+
+    function setStatus(text, isError = false) {
+      status.textContent = text;
+      status.className = 'status ' + (isError ? 'err' : 'ok');
+    }
+
+    async function api(path, method = 'GET', body = null, auth = false) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (auth && token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null
+      });
+
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+      output.textContent = JSON.stringify({ status: res.status, data }, null, 2);
+      if (!res.ok) {
+        setStatus(`Ошибка ${res.status}`, true);
+      } else {
+        setStatus(`OK ${res.status}`);
+      }
+      return { res, data };
+    }
+
+    document.getElementById('registerBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const fullName = document.getElementById('fullName').value;
+      const { data, res } = await api('/auth/register', 'POST', { email, password, fullName });
+      if (res.ok && data.token) {
+        token = data.token;
+        localStorage.setItem('jwt', token);
+        refreshToken();
+      }
+    };
+
+    document.getElementById('loginBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const { data, res } = await api('/auth/login', 'POST', { email, password });
+      if (res.ok && data.token) {
+        token = data.token;
+        localStorage.setItem('jwt', token);
+        refreshToken();
+      }
+    };
+
+    document.getElementById('logoutBtn').onclick = () => {
+      token = '';
+      localStorage.removeItem('jwt');
+      refreshToken();
+      setStatus('Токен очищен');
+    };
+
+    document.getElementById('productsBtn').onclick = () => api('/products');
+
+    document.getElementById('productByIdBtn').onclick = () => {
+      const id = document.getElementById('productId').value;
+      api(`/products/${id}`);
+    };
+
+    document.getElementById('createOrderBtn').onclick = () => {
+      const productId = Number(document.getElementById('orderProductId').value);
+      const quantity = Number(document.getElementById('orderQuantity').value);
+      api('/orders', 'POST', { items: [{ productId, quantity }] }, true);
+    };
+
+    document.getElementById('myOrdersBtn').onclick = () => api('/orders', 'GET', null, true);
+
+    document.getElementById('cancelOrderBtn').onclick = () => {
+      const id = document.getElementById('cancelOrderId').value;
+      api(`/orders/${id}`, 'DELETE', null, true);
+    };
+  </script>
+</body>
+</html>

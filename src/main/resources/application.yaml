@@ -1,0 +1,28 @@
+ktor:
+  application:
+    modules:
+      - com.example.ApplicationKt.module
+  deployment:
+    port: 8080
+
+app:
+  db:
+    url: "jdbc:h2:mem:shop;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false"
+    user: sa
+    password: ""
+  jwt:
+    secret: dev-secret-change-me
+    issuer: ktor-shop
+    audience: ktor-shop-users
+    realm: shop-api
+  redis:
+    host: localhost
+    port: 6379
+    enabled: false
+  rabbit:
+    host: localhost
+    port: 5672
+    user: guest
+    password: guest
+    queue: order-events
+    enabled: false
